@@ -48,6 +48,7 @@ for features, label in training_data:
     y.append(label)
 
 x = np.array(x).reshape(-1, img_size, img_size, 3) #convert to 4D
+y = np.array(y)
 
 #print(x.shape)
 
@@ -60,17 +61,21 @@ model = tf.keras.applications.MobileNetV2() #pretrained model
 #model.summary()
 
 #transfer learning
-base_input = model.layers[0]
+base_input = model.layers[0].input
 base_output = model.layers[-2].output
 
-final_output = layers.Dense(128) #add new layer after output of global pooling layer
+final_output = layers.Dense(128)(base_output) #add new layer after output of global pooling layer
 final_output = layers.Activation('relu')(final_output) #activation function
 final_output = layers.Dense(64)(final_output)
 final_output = layers.Activation('relu')(final_output)
-final_output = layers.Dense(7, activation='softmax')(final_output)
+final_output = layers.Dense(7, activation='softmax')(final_output) #classification layer
 
-final_output
+new_model = keras.Model(inputs = base_input, outputs = final_output)
 
+#new_model.summary()
 
+new_model.compile(loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
-
+#train and save Model
+new_model.fit(x,y, epochs=30)
+new_model.save('Emo_recV0.h5')
